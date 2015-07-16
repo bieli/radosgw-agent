@@ -1,0 +1,19 @@
+src_zone: us-zone-src
+source: http://src-cluster-example.com:80
+src_access_key: USZONEACCESSKEY
+src_secret_key: USZONESECRETKEY
+
+dest_zone: ue-zone-dst
+destination: http://dst-cluster-example.com:80
+dest_access_key: UEZONEACCESSKEY
+dest_secret_key: UEZONESECRETKEY
+
+log_file: /var/log/radosgw/radosgw-sync.log
+
+lock-timeout: 120
+num-workers: 12
+# rgw-data-log-window 600
+# object_sync_timeout: 3600
+# max_entries: 10
+# sync_scope: incremental
+# sync_scope: full
