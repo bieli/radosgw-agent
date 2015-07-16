@@ -264,7 +264,8 @@ class DataWorker(Worker):
 
         return True
 
-    def wait_for_object(self, bucket, obj, until, local_op_id):
+    def wait_for_object(self, bucket, obj, until, local_op_id, error_max_count=10):
+        err_counts = 0
         while time.time() < until:
             try:
                 state = client.get_op_state(self.dest_conn,
@@ -283,7 +284,14 @@ class DataWorker(Worker):
             except NotFound:
                 raise SyncFailed('object copy state not found')
             except Exception as e:
-                log.debug('error geting op state: %s', e, exc_info=True)
+                err_counts += 1
+                if err_counts > error_max_count:
+                    log.error('error counter >= %d - possible infinitly loop !',
+                              error_max_count, exc_info=True)
+                    raise SyncFailed('Infinitly loop ! Check connections quality between clusters !')
+                else:
+                    log.exception('error (count: %d) when geting op state: %s',
+                              err_counts, e, exc_info=True)
                 time.sleep(1)
         # timeout expired
         raise SyncTimedOut()
