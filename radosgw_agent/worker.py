@@ -256,6 +256,9 @@ class DataWorker(Worker):
             if found:
                 client.remove_op_state(self.dest_conn, self.daemon_id,
                                        local_op_id, bucket, obj)
+                log.debug('op state ID: "%s" removed' % local_op_id)
+            else:
+                log.debug('op state ID: "%s" not removed' % local_op_id)
         except NotFound:
             log.debug('op state already gone')
         except Exception:
@@ -273,11 +276,15 @@ class DataWorker(Worker):
                                             local_op_id,
                                             bucket, obj)
                 log.debug('op state is %s', state)
-                state = state[0]['state']
-                if state == 'complete':
-                    return
-                elif state != 'in-progress':
-                    raise SyncFailed('state is {0}'.format(state))
+                try:
+                    state = state[0]['state']
+                    if state == 'complete':
+                        return
+                    elif state != 'in-progress':
+                        raise SyncFailed('state is {0}'.format(state))
+                except IndexError:
+                    raise SyncFailed('client.get_op_state() returns bad element key')
+
                 time.sleep(1)
             except SyncFailed:
                 raise
@@ -286,9 +293,9 @@ class DataWorker(Worker):
             except Exception as e:
                 err_counts += 1
                 if err_counts > error_max_count:
-                    log.error('error counter >= %d - possible infinitly loop !',
+                    log.error('error counter >= %d - possible infinitely loop !',
                               error_max_count, exc_info=True)
-                    raise SyncFailed('Infinitly loop ! Check connections quality between clusters !')
+                    raise SyncFailed('Infinitely loop ! Check connections quality between clusters !')
                 else:
                     log.exception('error (count: %d) when geting op state: %s',
                               err_counts, e, exc_info=True)
